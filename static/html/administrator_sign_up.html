@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>street stall 管理员登录</title>
+
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="application/javascript"
+            src="https://cdn.staticfile.org/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+
+    <script type="application/javascript" src="../js/const.js"></script>
+</head>
+<body>
+<div>
+    <div class="row" style="padding: 30px 0;background-color: #03d7ff;color: white">
+        <!-- 大标题 -->
+        <div class="page-header text-center " style="height: 50px;border:0px">
+            <h1>street stall 政府端管理平台 <small>登录</small></h1>
+        </div>
+    </div>
+    <div>
+        <div class="panel panel-default" style="width: 25%; margin: 30px auto 0;">
+            <div class="panel-heading">
+                <h3 class="panel-title">管理员登录</h3>
+            </div>
+            <div class="panel-body">
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon1">
+                        <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                    </span>
+                    <input id="username" type="text" class="form-control" placeholder="请输入管理员用户名"
+                           aria-describedby="basic-addon1">
+                </div>
+                <br>
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon1">
+                        <span class="glyphicon glyphicon-lock" aria-hidden="true"></span>
+                    </span>
+                    <input id="password" type="password" class="form-control" placeholder="请输入密码"
+                           aria-describedby="basic-addon1">
+                </div>
+                <br>
+                <div class="bn-login" id="loginId" style="width: 15%; margin: auto;">
+                    <button type="button" class="btn btn-info" onclick="logIn()">登&nbsp;&nbsp;录</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+    function logIn() {
+        // 获取用户名密码
+        let username = $("#username").val()
+        let password = $("#password").val()
+        let jsonData = JSON.stringify({
+            username: username,
+            password: password
+        })
+        $.ajax({
+            type: "POST",
+            url: url_pre + "/api/manage/administrator_sign_up",
+            data: jsonData,
+            contentType: "application/json;charset=utf-8",
+            success: function (data) {
+                if (data.code !== 10000) {
+                    alert(data.error_message)
+                } else {
+                    let date = new Date();
+                    date.setTime(date.getTime() + (30 * 60 * 1000))
+                    localStorage.setItem('token', data.data.token);
+                    window.location.replace("./manage.html")
+                }
+
+            }
+        })
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>street stall 预约审核</title>
+
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="application/javascript"
+            src="https://cdn.staticfile.org/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+
+    <script type="application/javascript" src="../js/const.js"></script>
+</head>
+<body>
+<div class="row" style="padding: 30px 0;background-color: #03d7ff;color: white">
+    <!-- 大标题 -->
+    <div class="page-header text-center " style="height: 50px;border:0px">
+        <h1>street stall 政府端管理平台 <small>预约审核</small></h1>
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- 表格 -->
+            <table class="table table-hover table-bordered"
+                   style="margin-top: 30px">
+                <thead>
+                <tr>
+                    <th>预约单id</th>
+                    <th>商户名</th>
+                    <th>区域</th>
+                    <th>摊位编号</th>
+                    <th>预约时间</th>
+                    <th>提交时间</th>
+                    <th>附加信息</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="reserve_tbody">
+                </tbody>
+            </table>
+
+            <nav aria-label="...">
+                <ul class="pager">
+                    <li><a onclick="goToPreviousPage()">上一页</a></li>
+                    <li><a onclick="goToNextPage()">下一页</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+<script>
+    // 变量定义
+    var page = 1
+    const count = 8
+
+    // 刷新表格
+    function initTable(index, limit) {
+        index = index + ""
+        limit = limit + ""
+        let manage_token = localStorage.getItem("token")
+        if (manage_token === undefined) {
+            alert("无权限！")
+            window.location.replace("./administrator_sign_up.html");
+            return
+        }
+
+        // 请求数据
+        let jsonData = JSON.stringify({
+            index: index,
+            limit: limit
+        })
+        $.ajax({
+            type: "POST",
+            url: url_pre + "/api/manage/get_order_to_check",
+            headers: {
+                Token: manage_token
+            },
+            data: jsonData,
+            contentType: "application/json;charset=utf-8",
+            success: function (data) {
+                if (data.code !== 10000) {
+                    alert(data.error_message)
+                } else {
+                    // 清空表格
+                    $("#reserve_tbody").empty()
+
+                    orders = data.data.orders
+                    for (let i = 0; i < orders.length; i++) {
+                        let order = orders[i]
+                        let $tr = $("<tr></tr>");
+                        $tr.append($("<th>" + order.order_id + "</th>"))
+                        $tr.append($("<th>" + order.merchant_name + "</th>"))
+                        $tr.append($("<th>" + order.place_name + "</th>"))
+                        $tr.append($("<th>" + order.number_of_place + "</th>"))
+                        $tr.append($("<th>" + order.time + "-" + (Number(order.time) + 2) + "</th>"))
+                        $tr.append($("<th>" + dateFormat("YYYY-mm-dd HH:MM", order.post_time) + "</th>"))
+                        $tr.append($("<th>" + order.remark + "</th>"))
+
+                        let $btn_th = $("<th></th>")
+                        let order_id = order.order_id
+                        $btn_th.append($("<button type='button' class='btn btn-info' onclick='check(" + order_id + ", 1)'>通过</button>"))
+                        $btn_th.append($("<button type='button' class='btn btn-danger' onclick='check(" + order_id + ", 2)'>驳回</button>"))
+
+                        $tr.append($btn_th)
+
+                        $("#reserve_tbody").append($tr)
+                    }
+                }
+
+            }
+        })
+    }
+
+    // 前一页
+    function goToPreviousPage() {
+        if (page <= 1) {
+            page = 1
+            return
+        }
+        page -= 1
+        initTable(page, count)
+    }
+
+    // 前一页
+    function goToNextPage() {
+        page += 1
+        initTable(page, count)
+    }
+
+    // 审核
+    function check(orderId, active) {
+        orderId = orderId + ""
+        active = active + ""
+
+        let manage_token = localStorage.getItem("token")
+        if (manage_token === undefined) {
+            alert("无权限！")
+            window.location.replace("./administrator_sign_up.html");
+            return
+        }
+
+        let jsonData = JSON.stringify({
+            order_id: orderId,
+            active: active
+        })
+        $.ajax({
+            type: "POST",
+            url: url_pre + "/api/manage/check_order",
+            headers: {
+                Token: manage_token,
+
+            },
+            data: jsonData,
+            contentType: "application/json;charset=utf-8",
+            success: function (data) {
+                if (data.code !== 10000) {
+                    alert(data.error_message)
+                } else {
+                    alert("操作成功!")
+                    initTable(page, count)
+                }
+            }
+        })
+    }
+
+    // 格式化时间
+    function dateFormat(fmt, timeStamp) {
+        let date = new Date(timeStamp)
+        let ret;
+        const opt = {
+            "Y+": date.getFullYear().toString(),        // 年
+            "m+": (date.getMonth() + 1).toString(),     // 月
+            "d+": date.getDate().toString(),            // 日
+            "H+": date.getHours().toString(),           // 时
+            "M+": date.getMinutes().toString(),         // 分
+            "S+": date.getSeconds().toString()          // 秒
+            // 有其他格式化字符需求可以继续添加，必须转化成字符串
+        };
+        for (let k in opt) {
+            ret = new RegExp("(" + k + ")").exec(fmt);
+            if (ret) {
+                fmt = fmt.replace(ret[1], (ret[1].length == 1) ? (opt[k]) : (opt[k].padStart(ret[1].length, "0")))
+            }
+        }
+        return fmt;
+    }
+
+    initTable(page, count)
+</script>
+</body>
+</html>
